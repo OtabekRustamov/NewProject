@@ -1,5 +1,6 @@
 package com.example.root.newproject;
 
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,9 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.Request;
+import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.SizeReadyCallback;
@@ -25,9 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private RecyclerView recyclerView ;
-    private List<String> imageList ;
-    private int count = 0 ;
+    private RecyclerView recyclerView;
+    private List<String> imageList;
+    private int count = 0;
 
 
     @Override
@@ -55,14 +58,15 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = (RecyclerView) findViewById(R.id.mainActivity_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
-         recyclerView.setAdapter(new MyAdapter());
+        recyclerView.setAdapter(new MyAdapter());
 
     }
-    public class MyAdapter extends RecyclerView.Adapter<MyViewHolder>{
+
+    public class MyAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
         @Override
         public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = getLayoutInflater().inflate(R.layout.recycler_item, parent , false);
+            View view = getLayoutInflater().inflate(R.layout.recycler_item, parent, false);
             return new MyViewHolder(view);
         }
 
@@ -70,17 +74,22 @@ public class MainActivity extends AppCompatActivity {
         public void onBindViewHolder(final MyViewHolder holder, int position) {
             Glide.with(MainActivity.this)
                     .load(imageList.get(position))
-                    .downloadOnly(new SimpleTarget<File>() {
+                    .listener(new RequestListener<String, GlideDrawable>() {
                         @Override
-                        public void onResourceReady(File resource, GlideAnimation<? super File> glideAnimation) {
-                            Uri uri = Uri.fromFile(resource);
-                            holder.imageView1.setImageURI(uri);
-                            count++;
+                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                            return false;
                         }
-                    });
-            if (count == imageList.size()){
-                Toast.makeText(MainActivity.this, "Download has finished", Toast.LENGTH_SHORT).show();
-            }
+
+                        @Override
+                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            count++;
+                            if (count == imageList.size()) {
+                                Toast.makeText(MainActivity.this, "Download has finished", Toast.LENGTH_SHORT).show();
+                            }
+                            return false;
+                        }
+                    })
+                    .into(holder.imageView1);
         }
 
         @Override
@@ -89,9 +98,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder{
+    public class MyViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imageView1;
+
         public MyViewHolder(View itemView) {
             super(itemView);
             imageView1 = (ImageView) itemView.findViewById(R.id.iv_one);
